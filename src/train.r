@@ -184,18 +184,11 @@ write.csv(colname_mapping, COLNAME_MAPPING, row.names = FALSE)
 # apply new column names to df
 colnames(df) <- new_colnames
 
-
 # Label encoding target feature
-print("targets")
-print(head(target), 5)
 levels_target <- schema$target$classes
 encoded_target <- as.integer(factor(target, levels = levels_target)) - 1
-print("encoded_target")
-print(head(encoded_target), 5)
 saveRDS(levels_target, LABEL_ENCODER_FILE)
 saveRDS(encoded_target, ENCODED_TARGET_FILE)
-print("levels_target")
-print(levels_target)
 
 
 # Train the Support Vector Classifier
@@ -209,8 +202,3 @@ model <- svm(
 )
 
 saveRDS(model, PREDICTOR_FILE_PATH)
-
-
-predictions <- predict(model, newdata = df, probability = TRUE)
-print("predictions")
-print(head(attr(predictions, "probabilities")),5)
