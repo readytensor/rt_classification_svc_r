@@ -23,6 +23,7 @@ COLNAME_MAPPING <- file.path(MODEL_ARTIFACTS_PATH, "colname_mapping.csv")
 SCALING_FILE <- file.path(MODEL_ARTIFACTS_PATH, "scaler.rds")
 LABEL_ENCODER_FILE <- file.path(MODEL_ARTIFACTS_PATH, 'label_encoder.rds')
 ENCODED_TARGET_FILE <- file.path(MODEL_ARTIFACTS_PATH, "encoded_target.rds")
+REMOVED_COLUMNS_FILE <- file.path(MODEL_ARTIFACTS_PATH, "removed_column_names_list.txt")
 
 
 
@@ -109,9 +110,17 @@ if(length(categorical_features) > 0){
 
 # Remove constant columns
 constant_columns <- which(apply(df, 2, var) == 0)
-if (length(constant_columns) > 0) {
+removed_column_names <- colnames(df)[constant_columns]
+
+if (length(removed_column_names) > 0) {
     df <- df[,-constant_columns]
-} 
+}
+
+# Update numeric_features to exclude the removed columns
+numeric_features <- setdiff(numeric_features, removed_column_names)
+
+# Save removed columns in a file to use in predict.r
+writeLines(removed_column_names, con = REMOVED_COLUMNS_FILE)
 
 # Standard Scaling
 scaling_values <- list()
@@ -119,11 +128,9 @@ for (feature in numeric_features) {
     feature_mean <- mean(df[[feature]], na.rm = TRUE)
     feature_std <- sd(df[[feature]], na.rm = TRUE)
     scaling_values[[feature]] <- list(mean = feature_mean, std = feature_std)
-    
     # Standardize the feature
     df[[feature]] <- (df[[feature]] - feature_mean) / feature_std
 }
-
 # Save the scaling values for use during testing
 saveRDS(scaling_values, SCALING_FILE)
 

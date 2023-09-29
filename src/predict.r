@@ -26,6 +26,7 @@ COLNAME_MAPPING <- file.path(MODEL_ARTIFACTS_PATH, "colname_mapping.csv")
 SCALING_FILE <- file.path(MODEL_ARTIFACTS_PATH, "scaler.rds")
 LABEL_ENCODER_FILE <- file.path(MODEL_ARTIFACTS_PATH, 'label_encoder.rds')
 ENCODED_TARGET_FILE <- file.path(MODEL_ARTIFACTS_PATH, "encoded_target.rds")
+REMOVED_COLUMNS_FILE <- file.path(MODEL_ARTIFACTS_PATH, "removed_columns_list.txt")
 
 
 if (!dir.exists(PREDICTIONS_DIR)) {
@@ -98,12 +99,21 @@ if (length(categorical_features) > 0 && file.exists(OHE_ENCODER_FILE)) {
     df <- test_df_encoded[, !names(test_df_encoded) %in% extra_cols]
 }
 
+# After reading the test data and before starting with preprocessing
+if (file.exists(REMOVED_COLUMNS_FILE)) {
+    removed_columns <- readLines(REMOVED_COLUMNS_FILE)
+    df <- df[, !(colnames(df) %in% removed_columns)]
+
+    # Update numeric_features to exclude the removed columns
+    numeric_features <- setdiff(numeric_features, removed_columns)
+}
+
+
 # Standard Scaling
 scaling_values <- readRDS(SCALING_FILE) # Assuming you've saved scaling values during training
 for (feature in numeric_features) {
     df[[feature]] <- (df[[feature]] - scaling_values[[feature]]$mean) / scaling_values[[feature]]$std
 }
-
 # Outlier Capping for Standard Scaled Data
 lower_bound <- -4
 upper_bound <- 4
@@ -125,12 +135,14 @@ type <- ifelse(model_category == "binary_classification", "response", "probs")
 # Making predictions
 model <- readRDS(PREDICTOR_FILE_PATH)
 
+predictions <- predict(model, newdata = df, probability = TRUE)
 if (model_category == 'binary_classification'){
-    predictions <- predict(model, newdata = df, probability = TRUE)
+    
     if (!is.null(attr(predictions, "probabilities"))) {
         prob_values <- attr(predictions, "probabilities")
+        prob_values <- round(prob_values, 5)
         Prediction1 <- prob_values[,2]
-        Prediction2 <- 1 - Prediction1
+        Prediction2 <- prob_values[,1]
         predictions_df <- data.frame(Prediction2 = Prediction2, Prediction1 = Prediction1)
     } else {
         predictions_df <- data.frame(Prediction = predictions)
@@ -140,6 +152,7 @@ if (model_category == 'binary_classification'){
     predictions <- predict(model, newdata = df, probability = TRUE)
     if (!is.null(attr(predictions, "probabilities"))) {
         prob_values <- attr(predictions, "probabilities")
+        prob_values <- round(prob_values, 5)
         predictions_df <- as.data.frame(prob_values)
     } else {
         predictions_df <- data.frame(Prediction = predictions)
