@@ -136,16 +136,16 @@ model <- readRDS(PREDICTOR_FILE_PATH)
 predictions <- predict(model, newdata = df, probability = TRUE)
 probs <- attr(predictions, "probabilities")
 
+
 if (model_category == 'binary_classification') {
     Prediction1 <- probs[, "0"]
     Prediction2 <- probs[, "1"]
     predictions_df <- data.frame(Prediction1 = Prediction1, Prediction2 = Prediction2)    
 } else if (model_category == "multiclass_classification") {
     predictions_df <- as.data.frame(probs)
-    colnames(predictions_df) <- encoder  
 }
-encoder <- readRDS(LABEL_ENCODER_FILE)
 
+encoder <- readRDS(LABEL_ENCODER_FILE)
 colnames(predictions_df) <- encoder
 predictions_df <- tibble(ids = ids) %>% bind_cols(predictions_df)
 colnames(predictions_df)[1] <- id_feature
