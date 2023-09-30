@@ -129,16 +129,16 @@ df <- df[, colname_mapping$original]
 colnames(df) <- colname_mapping$sanitized[match(colnames(df), colname_mapping$original)]
 
 
-type <- ifelse(model_category == "binary_classification", "response", "probs")
-
 # Making predictions
 model <- readRDS(PREDICTOR_FILE_PATH)
 predictions <- predict(model, newdata = df, probability = TRUE)
 probs <- attr(predictions, "probabilities")
-# Reverse the columns
-predictions_df <- as.data.frame(probs[, rev(1:ncol(probs))])
 
 encoder <- readRDS(LABEL_ENCODER_FILE)
+# the probabilities are not always in the same order, so we need to reorder them
+col_order <- as.character(0:(length(encoder) - 1))
+predictions_df <- probs[, col_order]
+
 colnames(predictions_df) <- encoder
 
 predictions_df <- tibble(ids = ids) %>% bind_cols(predictions_df)
@@ -148,3 +148,4 @@ colnames(predictions_df)[1] <- id_feature
 options(scipen = 999)
 
 write.csv(predictions_df, PREDICTIONS_FILE, row.names = FALSE)
+

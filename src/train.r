@@ -185,7 +185,7 @@ write.csv(colname_mapping, COLNAME_MAPPING, row.names = FALSE)
 colnames(df) <- new_colnames
 
 # Label encoding target feature
-levels_target <- schema$target$classes
+levels_target <- as.character(schema$target$classes)
 encoded_target <- as.integer(factor(target, levels = levels_target)) - 1
 saveRDS(levels_target, LABEL_ENCODER_FILE)
 saveRDS(encoded_target, ENCODED_TARGET_FILE)
