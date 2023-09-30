@@ -190,14 +190,21 @@ encoded_target <- as.integer(factor(target, levels = levels_target)) - 1
 saveRDS(levels_target, LABEL_ENCODER_FILE)
 saveRDS(encoded_target, ENCODED_TARGET_FILE)
 
+# Set SVR parameters
+epsilon <- 0.1
+cost <- 1
+kernel <- "radial"  
+scale <- FALSE
 
 # Train the Support Vector Classifier
 model <- svm(
     as.factor(encoded_target) ~ .,
     data = df,
-    kernel = "radial",
+    kernel=kernel, 
+    cost=cost, 
+    epsilon=epsilon,
     type = "C-classification",
-    scale = FALSE,
+    scale = scale,
     probability = TRUE
 )
 
